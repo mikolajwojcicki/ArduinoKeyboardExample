@@ -20,7 +20,15 @@
 */
 
 #include "Arduino.h"
+
+//#define JOYSTICK
+
+#if !defined(JOYSTICK)
 #include "Keyboard.h"
+#define KEYBOARD
+#else
+#include "Joystick.h"
+#endif
 
 #define LowPin1 1
 #define LowPin2 0
@@ -31,12 +39,20 @@ const byte row = 2;
 const byte col = 2;
 const byte rowP[row] = {HighPin,HighPin1};
 const byte colP[col] = {LowPin1,LowPin2};
+#if !defined(JOYSTICK)
 const byte keys[row][col] = {
-  {'A','B'},
-  {'C','D'}
+  {'a','b'},
+  {'c','d'}
 };
+#else
+const uint8_t keys[row][col] = {
+  {0,1},
+  {2,3}
+};
+#endif
 bool pressed[row][col];
 
+#if defined(KEYBOARD)
 void setup() {
   // initialize control over the keyboard:
   Serial.begin(9600);
@@ -48,8 +64,7 @@ void setup() {
     }
   }
   for(byte i=0; i<row; i++) {
-    pinMode(rowP[i],OUTPUT);
-    digitalWrite(rowP[i], LOW);
+    pinMode(rowP[i],INPUT);
   };
   for(byte i=0; i<col; i++) {
     pinMode(colP[i],INPUT);
@@ -59,6 +74,7 @@ void setup() {
 void loop() {
   if(digitalRead(SafetyPin)==LOW) {
     for(byte i=0;i<row;i++) {
+      pinMode(rowP[i],OUTPUT);
       digitalWrite(rowP[i], HIGH);
       for(byte j=0;j<col;j++) {
         char out = keys[i][j];
@@ -75,9 +91,54 @@ void loop() {
       }
       delay(1);
       digitalWrite(rowP[i],LOW);
+      pinMode(rowP[i],INPUT);
     };
   }
   else {
     Keyboard.releaseAll();
   }
 }
+#else
+Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD,4U,0U,false,false,false,false,false,false,false,false,false,false,false);
+void setup() {
+  Serial.begin(9600);
+  pinMode(SafetyPin, INPUT);
+  for(byte i=0;i<row;i++) {
+    for(byte j=0;j<col;j++) {
+      pressed[i][j]=0;
+    }
+  }
+  for(byte i=0; i<row; i++) {
+    pinMode(rowP[i],INPUT);
+  };
+  for(byte i=0; i<col; i++) {
+    pinMode(colP[i],INPUT);
+  };
+  controller.begin();
+}
+
+void loop() {
+  while(digitalRead(SafetyPin)==LOW) {
+    for(byte i=0;i<row;i++) {
+      pinMode(rowP[i],OUTPUT);
+      digitalWrite(rowP[i], HIGH);
+      for(byte j=0;j<col;j++) {
+        char out = keys[i][j];
+        if(digitalRead(colP[j])==HIGH) {
+          Serial.println(out);
+          controller.pressButton(out);
+          pressed[i][j]=1;
+          delay(150);
+        }
+        else if(pressed[i][j]==1) {
+          controller.releaseButton(out);
+          pressed[i][j]=0;
+        }
+      }
+      delay(1);
+      digitalWrite(rowP[i],LOW);
+      pinMode(rowP[i],INPUT);
+    };
+  }
+}
+#endif
