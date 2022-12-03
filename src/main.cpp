@@ -32,17 +32,19 @@
 
 #define LowPin1 1
 #define LowPin2 0
-#define HighPin 21
-#define HighPin1 20
-#define SafetyPin 9
-const byte row = 2;
-const byte col = 2;
-const byte rowP[row] = {HighPin,HighPin1};
-const byte colP[col] = {LowPin1,LowPin2};
+#define LowPin3 2
+#define HighPin1 19
+#define HighPin2 20
+#define HighPin3 21
+const byte row = 3;
+const byte col = 3;
+const byte rowP[row] = {HighPin1,HighPin2,HighPin3};
+const byte colP[col] = {LowPin1,LowPin2,LowPin3};
 #if !defined(JOYSTICK)
 const byte keys[row][col] = {
-  {'a','b'},
-  {'c','d'}
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'}
 };
 #else
 const uint8_t keys[row][col] = {
@@ -57,7 +59,6 @@ void setup() {
   // initialize control over the keyboard:
   Serial.begin(9600);
   Keyboard.begin();
-  pinMode(SafetyPin, INPUT);
   for(byte i=0;i<row;i++) {
     for(byte j=0;j<col;j++) {
       pressed[i][j]=0;
@@ -72,7 +73,6 @@ void setup() {
 }
 
 void loop() {
-  if(digitalRead(SafetyPin)==LOW) {
     for(byte i=0;i<row;i++) {
       pinMode(rowP[i],OUTPUT);
       digitalWrite(rowP[i], HIGH);
@@ -82,7 +82,7 @@ void loop() {
           Serial.println(out);
           Keyboard.press(out);
           pressed[i][j]=1;
-          delay(150);
+          delay(75);
         }
         else if(pressed[i][j]==1) {
           Keyboard.release(out);
@@ -93,10 +93,6 @@ void loop() {
       digitalWrite(rowP[i],LOW);
       pinMode(rowP[i],INPUT);
     };
-  }
-  else {
-    Keyboard.releaseAll();
-  }
 }
 #else
 Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD,4U,0U,false,false,false,false,false,false,false,false,false,false,false);
