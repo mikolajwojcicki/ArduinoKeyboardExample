@@ -105,6 +105,7 @@ int pressed_test_keystrokes=0b00; //binary representation of an array holding in
 const unsigned int standardButtons = 9U; // number of physical buttons in the matrix 
 const unsigned int keystrokes = 2U; // number of programmed keystrokes
 unsigned int buttons = keystrokes+standardButtons;
+bool can_press_keys=true;
 Joystick_ controller(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_GAMEPAD,buttons,0U,false,false,false,false,false,false,false,false,false,false,false);
 
 int setbit(int bit, byte position) { //setbit function performs bitwise OR opreation and stores it's result in the defined position by shifting 1UL which is just a one byte to the left position amount and compraing it to the bit's bit int that position
@@ -131,7 +132,7 @@ void releaseKeys() {
   }
 }
 
-void keystroke(uint8_t keymap, int binary_array) { //this function has predefined patterns for keystrokes which are used in switch
+void keystroke(int binary_array) { //this function has predefined patterns for keystrokes which are used in switch
   switch (binary_array)
   {
   case 0b000111000:
@@ -145,7 +146,6 @@ void keystroke(uint8_t keymap, int binary_array) { //this function has predefine
     pressed_test_keystrokes=setbit(pressed_test_keystrokes,0);
     break;
   default:
-    controller.pressButton(keymap);
     break;
   }
 }
@@ -173,16 +173,25 @@ void loop() {
         //Serial.print(pressed[i][j]);
         if(digitalRead(colP[j])==HIGH) {
           pressed_test=setbit(pressed_test,out);
-          keystroke(out,pressed_test);
+          if(out!=4&&can_press_keys==true) {
+            controller.pressButton(out);
+          }
+          else {
+            can_press_keys=false;
+            keystroke(pressed_test);
+          }
           delay(10);
         }
         else if(testbit(pressed_test,out)==1) {
           controller.releaseButton(out);
           pressed_test=clearbit(pressed_test,out);
-          if(testbit(pressed_test_keystrokes,0UL)!=0) { //checks if all keystroke's states are 0 if they are not keystrokes are released and states reset to 0
+        }
+        else if(pressed_test==0UL&&pressed_test_keystrokes!=0UL) { //checks if all keystroke's states are 0 if they are not keystrokes are released and states reset to 0
             releaseKeystrokes();
             pressed_test_keystrokes=0b00;
-          }
+        }
+        else if(pressed_test==0UL&&pressed_test_keystrokes==0UL&&can_press_keys==false) {
+          can_press_keys=true;
         }
       };
       delay(1);
