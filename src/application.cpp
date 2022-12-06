@@ -127,7 +127,7 @@ void releaseKeystrokes() {
 }
 
 void releaseKeys() {
-  for(byte i=0;i<buttons;i++) {
+  for(byte i=0;i<standardButtons;i++) {
     controller.releaseButton(i);
   }
 }
@@ -135,12 +135,12 @@ void releaseKeys() {
 void keystroke(int binary_array) { //this function has predefined patterns for keystrokes which are used in switch
   switch (binary_array)
   {
-  case 0b000111000:
+  case 0b000010001:
     releaseKeys();
     controller.pressButton(9);
     pressed_test_keystrokes=setbit(pressed_test_keystrokes,0);
     break;
-  case 0b100010101:
+  case 0b000010010:
     releaseKeys();
     controller.pressButton(10);
     pressed_test_keystrokes=setbit(pressed_test_keystrokes,0);
@@ -173,10 +173,10 @@ void loop() {
         //Serial.print(pressed[i][j]);
         if(digitalRead(colP[j])==HIGH) {
           pressed_test=setbit(pressed_test,out);
-          if(out!=4&&can_press_keys==true) {
+          if(out!=4&&can_press_keys==true) { //checks if pressed key is not 4th and can_press_keys is true
             controller.pressButton(out);
           }
-          else {
+          else { //if not it means that 4th key is pressed. the keys are locked and keystroke function is run
             can_press_keys=false;
             keystroke(pressed_test);
           }
@@ -186,11 +186,11 @@ void loop() {
           controller.releaseButton(out);
           pressed_test=clearbit(pressed_test,out);
         }
-        else if(pressed_test==0UL&&pressed_test_keystrokes!=0UL) { //checks if all keystroke's states are 0 if they are not keystrokes are released and states reset to 0
+        else if(pressed_test==0UL&&pressed_test_keystrokes!=0UL) { //checks if there are keystorokes with pressed status and no keys are pressed. if they are not, keystrokes are released and states reset to 0
             releaseKeystrokes();
             pressed_test_keystrokes=0b00;
         }
-        else if(pressed_test==0UL&&pressed_test_keystrokes==0UL&&can_press_keys==false) {
+        else if(pressed_test==0UL&&pressed_test_keystrokes==0UL&&can_press_keys==false) { //if there are not keystrokes and no keys pressed and can_press_keys is still false it is being set to true
           can_press_keys=true;
         }
       };
